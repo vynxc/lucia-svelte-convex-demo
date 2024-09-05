@@ -1,4 +1,4 @@
-import { ConvexError, convexToJson, v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import { DatabaseWriter, mutation, query } from './_generated/server';
 import { getAuth } from './auth/lucia';
 import { Scrypt } from 'lucia';
@@ -52,7 +52,7 @@ export const login = mutation({
 	}
 });
 
-export const getSession = query({
+export const validateSession = mutation({
 	args: {
 		sessionId: v.string()
 	},

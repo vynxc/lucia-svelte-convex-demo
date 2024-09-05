@@ -8,7 +8,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (!sessionCookie) return await resolve(event);
 
-	const sessionJson = await client.query(api.users.getSession, { sessionId: sessionCookie });
+	const sessionJson = await client.mutation(api.users.validateSession, { sessionId: sessionCookie });
 
 	const session = JSON.parse(sessionJson) as { user: User | null; session: Session | null };
 

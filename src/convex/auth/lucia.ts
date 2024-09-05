@@ -1,5 +1,5 @@
 import { Lucia, type Adapter, type DatabaseSession, type DatabaseUser } from 'lucia';
-import type { DatabaseReader, DatabaseWriter } from '../_generated/server';
+import { DatabaseReader, DatabaseWriter } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
 
 declare module 'lucia' {
@@ -73,8 +73,9 @@ export class ConvexAdapter implements Adapter {
 			attributes: {}
 		}));
 	}
-
+	//DatabaseWriter
 	async setSession(session: DatabaseSession): Promise<void> {
+		ensureWritePermissions(this.db, true);
 		await this.db.insert('sessions', {
 			id: session.id,
 			user_id: session.userId,
@@ -82,7 +83,9 @@ export class ConvexAdapter implements Adapter {
 		});
 	}
 
+	//DatabaseWriter
 	async updateSessionExpiration(sessionId: string, expiresAt: Date): Promise<void> {
+		ensureWritePermissions(this.db, true);
 		const session = await this.db
 			.query('sessions')
 			.withIndex('byId', (q) => q.eq('id', sessionId))
@@ -90,8 +93,9 @@ export class ConvexAdapter implements Adapter {
 		if (session === null) return;
 		await this.db.patch(session._id, { expires_at: expiresAt.getTime() });
 	}
-
+	//DatabaseWriter
 	async deleteSession(sessionId: string): Promise<void> {
+		ensureWritePermissions(this.db, true);
 		const session = await this.db
 			.query('sessions')
 			.withIndex('byId', (q) => q.eq('id', sessionId))
@@ -99,8 +103,9 @@ export class ConvexAdapter implements Adapter {
 		if (session === null) return;
 		await this.db.delete(session._id);
 	}
-
+	//DatabaseWriter
 	async deleteUserSessions(userId: string): Promise<void> {
+		ensureWritePermissions(this.db, true);
 		const sessions = await this.db
 			.query('sessions')
 			.filter((q) => q.eq(q.field('user_id'), userId))
@@ -109,10 +114,20 @@ export class ConvexAdapter implements Adapter {
 	}
 
 	async deleteExpiredSessions(): Promise<void> {
+		ensureWritePermissions(this.db, true);
 		const sessions = await this.db.query('sessions').collect();
 		const expiredSessions = sessions.filter((session) => session.expires_at < Date.now());
 		await Promise.all(expiredSessions.map((session) => this.db.delete(session._id)));
 	}
+}
+function ensureWritePermissions(db: DatabaseWriter, requireDbWriter: boolean) {
+	const isDbWriter = typeof db.insert === 'function';
+	if (requireDbWriter && !isDbWriter) {
+		console.error('Expected DatabaseWriter but got DatabaseReader, consider using a mutation');
+	}
+	throw new Error(
+		`Expected ${requireDbWriter ? 'DatabaseWriter' : 'DatabaseReader'} but got ${isDbWriter ? 'DatabaseWriter' : 'DatabaseReader'}`
+	);
 }
 
 export type Auth = ReturnType<typeof getAuth>;
