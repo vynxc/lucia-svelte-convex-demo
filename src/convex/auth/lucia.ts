@@ -75,7 +75,7 @@ export class ConvexAdapter implements Adapter {
 	}
 	//DatabaseWriter
 	async setSession(session: DatabaseSession): Promise<void> {
-		ensureWritePermissions(this.db, true);
+		ensureWritePermissions(this.db);
 		await this.db.insert('sessions', {
 			id: session.id,
 			user_id: session.userId,
@@ -85,7 +85,7 @@ export class ConvexAdapter implements Adapter {
 
 	//DatabaseWriter
 	async updateSessionExpiration(sessionId: string, expiresAt: Date): Promise<void> {
-		ensureWritePermissions(this.db, true);
+		ensureWritePermissions(this.db);
 		const session = await this.db
 			.query('sessions')
 			.withIndex('byId', (q) => q.eq('id', sessionId))
@@ -95,7 +95,7 @@ export class ConvexAdapter implements Adapter {
 	}
 	//DatabaseWriter
 	async deleteSession(sessionId: string): Promise<void> {
-		ensureWritePermissions(this.db, true);
+		ensureWritePermissions(this.db);
 		const session = await this.db
 			.query('sessions')
 			.withIndex('byId', (q) => q.eq('id', sessionId))
@@ -105,7 +105,7 @@ export class ConvexAdapter implements Adapter {
 	}
 	//DatabaseWriter
 	async deleteUserSessions(userId: string): Promise<void> {
-		ensureWritePermissions(this.db, true);
+		ensureWritePermissions(this.db);
 		const sessions = await this.db
 			.query('sessions')
 			.filter((q) => q.eq(q.field('user_id'), userId))
@@ -114,13 +114,13 @@ export class ConvexAdapter implements Adapter {
 	}
 
 	async deleteExpiredSessions(): Promise<void> {
-		ensureWritePermissions(this.db, true);
+		ensureWritePermissions(this.db);
 		const sessions = await this.db.query('sessions').collect();
 		const expiredSessions = sessions.filter((session) => session.expires_at < Date.now());
 		await Promise.all(expiredSessions.map((session) => this.db.delete(session._id)));
 	}
 }
-function ensureWritePermissions(db: DatabaseWriter, requireDbWriter: boolean) {
+function ensureWritePermissions(db: DatabaseWriter) {
 	const isDbWriter = typeof db.insert === 'function';
 	if (requireDbWriter && !isDbWriter) {
 		throw new ConvexError(`Expected DatabaseWriter but got DatabaseReader, consider using a mutation`);
