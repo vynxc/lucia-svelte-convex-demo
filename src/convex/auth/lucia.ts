@@ -123,11 +123,8 @@ export class ConvexAdapter implements Adapter {
 function ensureWritePermissions(db: DatabaseWriter, requireDbWriter: boolean) {
 	const isDbWriter = typeof db.insert === 'function';
 	if (requireDbWriter && !isDbWriter) {
-		console.error('Expected DatabaseWriter but got DatabaseReader, consider using a mutation');
+		throw new ConvexError(`Expected DatabaseWriter but got DatabaseReader, consider using a mutation`);
 	}
-	throw new Error(
-		`Expected ${requireDbWriter ? 'DatabaseWriter' : 'DatabaseReader'} but got ${isDbWriter ? 'DatabaseWriter' : 'DatabaseReader'}`
-	);
 }
 
 export type Auth = ReturnType<typeof getAuth>;
