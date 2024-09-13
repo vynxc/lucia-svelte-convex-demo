@@ -1,6 +1,7 @@
 import { Lucia, type Adapter, type DatabaseSession, type DatabaseUser } from 'lucia';
 import { DatabaseReader, DatabaseWriter } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
+import { ConvexError } from 'convex/values';
 
 declare module 'lucia' {
 	interface Register {
@@ -67,7 +68,7 @@ export class ConvexAdapter implements Adapter {
 		console.log(`got a total of ${sessions.length} sessions`);
 
 		return sessions.map((session) => ({
-			id: session._id,
+			id: session.id,
 			userId: session.user_id,
 			expiresAt: new Date(session.expires_at),
 			attributes: {}
@@ -122,7 +123,7 @@ export class ConvexAdapter implements Adapter {
 }
 function ensureWritePermissions(db: DatabaseWriter) {
 	const isDbWriter = typeof db.insert === 'function';
-	if (requireDbWriter && !isDbWriter) {
+	if (!isDbWriter) {
 		throw new ConvexError(`Expected DatabaseWriter but got DatabaseReader, consider using a mutation`);
 	}
 }
